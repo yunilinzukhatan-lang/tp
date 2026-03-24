@@ -1,0 +1,168 @@
+// Angular Material Theme - @use must be FIRST
+@use '@angular/material' as mat;
+
+// Define custom color palette based on #B8262F
+$primary-palette: mat.m2-define-palette((
+  50: #fce4e5,
+  100: #f9bbbf,
+  200: #f58e94,
+  300: #f16068,
+  400: #ee3e47,
+  500: #B8262F,
+  600: #a9212a,
+  700: #961b23,
+  800: #84161c,
+  900: #640e12,
+  contrast: (
+    50: rgba(0, 0, 0, 0.87),
+    100: rgba(0, 0, 0, 0.87),
+    200: rgba(0, 0, 0, 0.87),
+    300: rgba(0, 0, 0, 0.87),
+    400: #fff,
+    500: #fff,
+    600: #fff,
+    700: #fff,
+    800: #fff,
+    900: #fff,
+  )
+), 500, 300, 700);
+
+$accent-palette: mat.m2-define-palette(mat.$m2-indigo-palette, A200, A100, A400);
+$warn-palette: mat.m2-define-palette(mat.$m2-red-palette);
+
+$theme: mat.m2-define-light-theme((
+  color: (
+    primary: $primary-palette,
+    accent: $accent-palette,
+    warn: $warn-palette,
+  ),
+  typography: mat.m2-define-typography-config(
+    $font-family: 'Inter, sans-serif',
+  ),
+  density: 0,
+));
+
+@include mat.all-component-themes($theme);
+
+// CSS Reset & Base
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', sans-serif;
+  background: #f5f6fa;
+  color: #1a1a2e;
+  -webkit-font-smoothing: antialiased;
+}
+
+// Scrollbar styling
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 3px;
+
+  &:hover {
+    background: #aaa;
+  }
+}
+
+// Snackbar styles
+.snack-error .mdc-snackbar__surface {
+  background: #c62828 !important;
+  color: #fff !important;
+}
+
+.snack-success .mdc-snackbar__surface {
+  background: #2e7d32 !important;
+  color: #fff !important;
+}
+
+// Material overrides
+.mat-mdc-card {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06) !important;
+}
+
+.mat-mdc-table {
+  background: transparent !important;
+}
+
+.mat-mdc-header-row {
+  background: #f8f9fa !important;
+}
+
+.mat-mdc-header-cell {
+  font-weight: 600 !important;
+  font-size: 13px !important;
+  color: #666 !important;
+  border-bottom: 2px solid #e0e0e0 !important;
+}
+
+.mat-mdc-row:hover {
+  background: rgba(184, 38, 47, 0.03) !important;
+}
+
+// Dialog
+.mat-mdc-dialog-container {
+  border-radius: 16px !important;
+  overflow: hidden;
+}
+
+// Form fields
+.mat-mdc-form-field-subscript-wrapper {
+  margin-bottom: -4px;
+}
+
+// Paginator
+.mat-mdc-paginator {
+  background: transparent !important;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 8px;
+}
+
+// Buttons
+.mdc-button {
+  border-radius: 8px !important;
+  font-weight: 500 !important;
+}
+
+// Utility classes
+.full-width {
+  width: 100% !important;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.gap-8 {
+  gap: 8px;
+}
+
+.mt-16 {
+  margin-top: 16px;
+}
+
+.mb-16 {
+  margin-bottom: 16px;
+}
