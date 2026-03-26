@@ -103,6 +103,13 @@ export const routes: Routes = [
             (m) => m.ReportsComponent
           ),
       },
+      {
+        path: 'points',
+        loadComponent: () =>
+          import('./features/points/points.component').then(
+            (m) => m.PointsComponent
+          ),
+      },
     ],
   },
   { path: '**', redirectTo: 'dashboard' },

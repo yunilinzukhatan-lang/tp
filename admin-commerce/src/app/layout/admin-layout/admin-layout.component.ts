@@ -31,6 +31,7 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Orders', icon: 'shopping_cart', route: '/orders' },
   { label: 'Customers', icon: 'people', route: '/customers' },
   { label: 'Reports', icon: 'bar_chart', route: '/reports' },
+  { label: 'Loyalty Points', icon: 'stars', route: '/points' },
 ];
 
 @Component({

@@ -11,8 +11,10 @@ import { MatIconModule } from '@angular/material/icon';
 import { MatTabsModule } from '@angular/material/tabs';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatChipsModule } from '@angular/material/chips';
+import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { FormsModule } from '@angular/forms';
 import { ProductService } from '../../../services/product.service';
+import { UploadService } from '../../../services/upload.service';
 import { Product, ProductImage } from '../../../models/product.model';
 import { Category } from '../../../models/category.model';
 
@@ -36,6 +38,7 @@ export interface ProductFormData {
     MatIconModule,
     MatTabsModule,
     MatChipsModule,
+    MatProgressBarModule,
     FormsModule,
   ],
   template: `
@@ -115,27 +118,56 @@ export interface ProductFormData {
         @if (isEdit) {
           <mat-tab label="Images">
             <div class="images-section">
-              <!-- Add Image Form -->
+              <!-- Upload area -->
               <div class="add-image-form">
-                <mat-form-field appearance="outline" class="full-width">
-                  <mat-label>Image URL</mat-label>
-                  <input matInput [(ngModel)]="newImageUrl" placeholder="https://..." />
-                  <mat-icon matPrefix>image</mat-icon>
-                </mat-form-field>
+                <!-- Hidden file input -->
+                <input
+                  #fileInput
+                  type="file"
+                  accept="image/*"
+                  style="display:none"
+                  (change)="onFileSelected($event)"
+                />
+
+                <!-- Drop / click zone -->
+                <div
+                  class="drop-zone"
+                  [class.drop-zone--active]="uploading"
+                  (click)="fileInput.click()"
+                  (dragover)="$event.preventDefault()"
+                  (drop)="onDrop($event)"
+                >
+                  @if (uploading) {
+                    <mat-icon class="drop-zone__icon">cloud_upload</mat-icon>
+                    <span>Uploading…</span>
+                    <mat-progress-bar mode="indeterminate" class="upload-progress"></mat-progress-bar>
+                  } @else if (previewUrl) {
+                    <img [src]="previewUrl" class="drop-zone__preview" alt="preview" />
+                    <span class="drop-zone__hint">Click or drag to replace</span>
+                  } @else {
+                    <mat-icon class="drop-zone__icon">add_photo_alternate</mat-icon>
+                    <span>Click or drag an image here</span>
+                    <span class="drop-zone__hint">PNG, JPG, WEBP — max 10 MB</span>
+                  }
+                </div>
+
+                <!-- Alt text + primary toggle -->
                 <mat-form-field appearance="outline" class="full-width">
                   <mat-label>Alt Text</mat-label>
                   <input matInput [(ngModel)]="newImageAlt" placeholder="Image description" />
                 </mat-form-field>
+
                 <div class="toggle-row">
                   <mat-slide-toggle [(ngModel)]="newImagePrimary" color="primary">
                     Set as primary image
                   </mat-slide-toggle>
                 </div>
+
                 <button
                   mat-flat-button
                   color="primary"
                   (click)="addImage()"
-                  [disabled]="!newImageUrl"
+                  [disabled]="!newImageUrl || uploading"
                 >
                   <mat-icon>add_photo_alternate</mat-icon>
                   Add Image
@@ -161,7 +193,7 @@ export interface ProductFormData {
                 @if (!productImages.length) {
                   <div class="no-images">
                     <mat-icon>photo_library</mat-icon>
-                    <p>No images yet. Add an image URL above.</p>
+                    <p>No images yet. Upload an image above.</p>
                   </div>
                 }
               </div>
@@ -271,21 +303,76 @@ export interface ProductFormData {
       mat-icon { font-size: 40px; width: 40px; height: 40px; display: block; margin: 0 auto 8px; }
       p { margin: 0; font-size: 13px; }
     }
+
+    .drop-zone {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      min-height: 140px;
+      border: 2px dashed #ccc;
+      border-radius: 12px;
+      cursor: pointer;
+      color: #888;
+      font-size: 13px;
+      transition: border-color .2s, background .2s;
+      margin-bottom: 12px;
+      padding: 16px;
+      overflow: hidden;
+
+      &:hover {
+        border-color: #1976d2;
+        background: #f0f7ff;
+      }
+
+      &--active {
+        border-color: #1976d2;
+        background: #f0f7ff;
+      }
+    }
+
+    .drop-zone__icon {
+      font-size: 36px;
+      width: 36px;
+      height: 36px;
+      color: #bbb;
+    }
+
+    .drop-zone__hint {
+      font-size: 11px;
+      color: #bbb;
+    }
+
+    .drop-zone__preview {
+      width: 100%;
+      max-height: 200px;
+      object-fit: contain;
+      border-radius: 8px;
+    }
+
+    .upload-progress {
+      width: 100%;
+      margin-top: 8px;
+    }
   `],
 })
 export class ProductFormComponent implements OnInit {
   private readonly fb = inject(FormBuilder);
   private readonly productService = inject(ProductService);
+  private readonly uploadService = inject(UploadService);
   private readonly snackBar = inject(MatSnackBar);
   private readonly dialogRef = inject(MatDialogRef<ProductFormComponent>);
 
   isEdit = false;
   loading = false;
+  uploading = false;
   productImages: ProductImage[] = [];
 
   newImageUrl = '';
   newImageAlt = '';
   newImagePrimary = false;
+  previewUrl: string | null = null;
 
   form!: FormGroup;
 
@@ -335,6 +422,35 @@ export class ProductFormComponent implements OnInit {
     });
   }
 
+  onFileSelected(event: Event): void {
+    const file = (event.target as HTMLInputElement).files?.[0];
+    if (file) this.uploadFile(file);
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    const file = event.dataTransfer?.files?.[0];
+    if (file) this.uploadFile(file);
+  }
+
+  private uploadFile(file: File): void {
+    this.uploading = true;
+    this.previewUrl = null;
+    this.newImageUrl = '';
+
+    this.uploadService.upload(file, 'products').subscribe({
+      next: (res) => {
+        this.newImageUrl = res.url;
+        this.previewUrl = res.url;
+        this.uploading = false;
+        this.snackBar.open('Image uploaded — click "Add Image" to attach it', 'Close', { duration: 3000 });
+      },
+      error: () => {
+        this.uploading = false;
+      },
+    });
+  }
+
   addImage(): void {
     if (!this.newImageUrl || !this.data.product) return;
 
@@ -348,6 +464,7 @@ export class ProductFormComponent implements OnInit {
         this.newImageUrl = '';
         this.newImageAlt = '';
         this.newImagePrimary = false;
+        this.previewUrl = null;
         this.snackBar.open('Image added', 'Close', { duration: 2000 });
       },
     });
